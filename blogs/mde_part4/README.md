@@ -4,9 +4,16 @@ Open source code associated with the Microsoft Defender of AWS: Part 4 created b
 
 Originally Posted At: !TODO...
 
-## Solution Architecture
+![diagram](../pics/MdePart4Diagram.jpg)
 
-[diagram](../pics/MdePart4Diagram.jpg)
+## How do I use this :thinking: :thinking: ??
+
+```bash
+wget 
+pip3 install --upgrade awscli
+S3_BUCKET='insert_bucket_here'
+aws s3 cp
+```
 
 ## Contact Us :telephone_receiver: :telephone_receiver:
 

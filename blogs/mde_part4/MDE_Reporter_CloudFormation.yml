@@ -1,0 +1,222 @@
+#This file is part of Lightspin EKS Creation Engine.
+#SPDX-License-Identifier: Apache-2.0
+
+#Licensed to the Apache Software Foundation (ASF) under one
+#or more contributor license agreements.  See the NOTICE file
+#distributed with this work for additional information
+#regarding copyright ownership.  The ASF licenses this file
+#to you under the Apache License, Version 2.0 (the
+#"License"); you may not use this file except in compliance
+#with the License.  You may obtain a copy of the License at
+
+#http://www.apache.org/licenses/LICENSE-2.0
+
+#Unless required by applicable law or agreed to in writing,
+#software distributed under the License is distributed on an
+#"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#KIND, either express or implied.  See the License for the
+#specific language governing permissions and limitations
+#under the License.
+AWSTemplateFormatVersion: 2010-09-09
+Description: >- 
+  This stack contains infrastructure to support Microsoft Defender for Endpoint Reporting as part of the MDE on AWS Part 4 Blog Post.
+Parameters:
+  # Eventbridge rates
+  ReportingEventbridgeRate:
+    Description: The rate expression for the EventBridge Rule to run the reporting CodeBuild project
+    Type: String
+    AllowedValues:
+      - rate(1 hours)
+      - rate(2 hours)
+      - rate(4 hours)
+      - rate(6 hours)
+      - rate(8 hours)
+      - rate(12 hours)
+      - rate(18 hours)
+      - rate(24 hours)
+      - rate(48 hours)
+    Default: rate(24 hours)
+  # SSM Params & S3 Buckets
+  AzureAppTenantIdParameter:
+    Description: SSM Parameter name containing your AAD Tenant ID
+    Type: String
+    Default: MDE-AWSAutomation-App-DirectoryID
+  AzureAppClientIdParameter:
+    Description: SSM Parameter name containing your AAD Client ID
+    Type: String
+    Default: MDE-AWSAutomation-App-ClientID
+  AzureAppClientSecretIdParameter:
+    Description: SSM Parameter name containing your AAD Client Secret ID
+    Type: String
+    Default: MDE-AWSAutomation-App-SecretID
+  OCISOGenericArtifacts:
+    Description: Name of the S3 Bucket that QuickSight artifacts will be uploaded to
+    Type: String
+  # Tag
+  EnvironmentName:
+    Description: Environment name for all tags
+    Type: String
+    Default: MDEonAWSPt4Blog
+Resources:
+  #####
+  #IAM#
+  #####
+  QuickSightReporterCodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Description: >-
+        IAM Role for CodeBuild which allows Cloudwatch, EC2, SSM and S3 permissions - Managed by CloudFormation
+      RoleName: !Sub '${EnvironmentName}-CodeBuildReporterRole'
+      Policies:
+        -
+          PolicyName: !Sub '${EnvironmentName}-CodeBuildReporterPolicy'
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+                - logs:CreateLogGroup
+                - logs:CreateLogStream
+                - logs:PutLogEvents
+                - ec2:DescribeRegions
+                - ec2:DescribeInstances
+                - quicksight:CreateGroup
+                - quicksight:DescribeGroup
+                - quicksight:ListUsers
+                - quicksight:CreateGroupMembership
+                - quicksight:CreateDataSource
+                - quicksight:UpdateDataSource
+              Resource: '*'
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+              Resource:
+                - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AzureAppTenantIdParameter}'
+                - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AzureAppClientIdParameter}'
+                - !Sub 'arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AzureAppClientSecretIdParameter}'
+            - Effect: Allow
+              Action:
+                - s3:GetObject
+                - s3:ListBucket
+                - s3:GetObjectVersion
+                - s3:GetBucketAcl
+                - s3:GetBucketLocation
+                - s3:PutObject
+                - s3:PutObjectAcl
+              Resource:
+                - !Sub 'arn:aws:s3:::${OCISOGenericArtifacts}'
+                - !Sub 'arn:aws:s3:::${OCISOGenericArtifacts}/quicksight*'
+                - !Sub 'arn:aws:s3:::${OCISOGenericArtifacts}/quicksight/*'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: codebuild.amazonaws.com
+          Action: sts:AssumeRole
+      Tags: 
+        - 
+          Key: Name
+          Value: !Sub '${EnvironmentName}-CodeBuildReporterRole'
+
+  CodeBuildEventRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${EnvironmentName}-EventBridgeInvokeRole'
+      Description: >-
+        Gives permissions to EventBridge Service Principal to invoke CodeBuild project for
+        QuickSight reporting - Managed by CloudFormation
+      Policies:
+      - PolicyName: !Sub '${EnvironmentName}-EventBridgeInvokePolicy'
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action:
+              - codebuild:StartBuild
+            Resource: !Sub 'arn:${AWS::Partition}:codebuild:${AWS::Region}:${AWS::AccountId}:project/${EnvironmentName}-QuickSightReporter'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal: { Service: events.amazonaws.com }
+          Action:
+            - sts:AssumeRole
+      Tags: 
+        - 
+          Key: Name
+          Value: !Sub '${EnvironmentName}-EventBridgeInvokeRole'
+  #############
+  #EVENTBRIDGE#
+  #############
+  CodebuildReporterScheduleRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub '${EnvironmentName}-CodebuildReporterRule'
+      Description: >-
+        Invokes the MDE Reporter CodeBuild on schedule to create 
+        JSON payloads of global attacks for QuickSight visualization - Managed by CloudFormation
+      ScheduleExpression: !Ref ReportingEventbridgeRate #rate(value unit) minute | minutes | hour | hours | day | days
+      State: ENABLED
+      Targets: 
+        - 
+          Arn: !GetAtt QuickSightReporterCodeBuild.Arn
+          Id: !Sub '${EnvironmentName}-CodebuildReporterRule'
+          RoleArn: !GetAtt CodeBuildEventRole.Arn
+  ###########
+  #CODEBUILD#
+  ###########
+  QuickSightReporterCodeBuild:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub '${EnvironmentName}-QuickSightReporter'
+      Artifacts:
+        Type: NO_ARTIFACTS
+      Description: >-
+        Parses Microsoft Defender for Endpoint Data, EC2 Data, and uploads Data Sources to Amazon QuickSight - Managed by CloudFormation
+      TimeoutInMinutes: 60
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:5.0 # ubuntu 20.04
+        PrivilegedMode: false
+        Type: LINUX_CONTAINER
+        EnvironmentVariables:
+          - 
+            Name: AZURE_APP_TENANT_ID_PARAM
+            Type: PLAINTEXT
+            Value: !Ref AzureAppTenantIdParameter
+          - 
+            Name: AZURE_APP_CLIENT_ID_PARAM
+            Type: PLAINTEXT
+            Value: !Ref AzureAppClientIdParameter
+          - 
+            Name: AZURE_APP_SECRET_ID_PARAM
+            Type: PLAINTEXT
+            Value: !Ref AzureAppClientSecretIdParameter
+          - 
+            Name: QUICKSIGHT_S3_BUCKET_NAME
+            Type: PLAINTEXT
+            Value: !Ref OCISOGenericArtifacts
+      LogsConfig:
+        CloudWatchLogs:
+          Status: ENABLED
+      Source:
+        Type: NO_SOURCE
+        BuildSpec: !Sub |
+          version: 0.2
+          phases:
+            install:
+              commands:
+                - pip3 install --upgrade pip
+                - pip3 install --upgrade awscli
+                - pip3 install --upgrade boto3
+                - aws s3 cp s3://$QUICKSIGHT_S3_BUCKET_NAME/quicksight/report.py report.py
+            build:
+              commands:
+                - python3 report.py
+      ServiceRole: !GetAtt QuickSightReporterCodeBuildRole.Arn
+      Tags: 
+        - 
+          Key: Name
+          Value: !Sub '${EnvironmentName}-EventBridgeInvokeRole'
+  # END!!
