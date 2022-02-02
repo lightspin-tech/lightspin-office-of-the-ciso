@@ -4,16 +4,28 @@ Open source code associated with the Microsoft Defender of AWS: Part 4 created b
 
 Originally Posted At: !TODO...
 
-![diagram](../pics/MdePart4Diagram.jpg)
+![diagram](.../pics/MdePart4Diagram.jpg)
 
 ## How do I use this :thinking: :thinking: ??
 
 ```bash
-wget 
+wget https://raw.githubusercontent.com/lightspin-tech/lightspin-office-of-the-ciso/main/blogs/mde_part4/MDE_Reporter_CloudFormation.yml
+wget https://raw.githubusercontent.com/lightspin-tech/lightspin-office-of-the-ciso/main/blogs/mde_part4/report.py
 pip3 install --upgrade awscli
 S3_BUCKET='insert_bucket_here'
-aws s3 cp
+AWS_REGION=$(aws configure get region)
+aws s3 cp ./report.py s3://$S3_BUCKET/quicksight/report.py
+aws s3 cp ./MDE_Reporter_CloudFormation.yml s3://$S3_BUCKET/quicksight/MDE_Reporter_CloudFormation.yml
+aws cloudformation create-stack \
+    --stack-name MDEonAWSPart4 \
+    --template-url https://$S3_BUCKET.s3.$AWS_REGION.amazonaws.com/quicksight/MDE_Reporter_CloudFormation.yml \
+    --parameters ParameterKey=OCISOGenericArtifacts,ParameterValue=$S3_BUCKET \
+    --capabilities CAPABILITY_NAMED_IAM
 ```
+
+{
+    "StackId": "arn:aws:cloudformation:us-east-2:798314729593:stack/MDEonAWSPart4/ec2b6a30-8449-11ec-a3d7-021f02436f0e"
+}
 
 ## Contact Us :telephone_receiver: :telephone_receiver:
 
