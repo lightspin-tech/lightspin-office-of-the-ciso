@@ -4,7 +4,7 @@ Open source code associated with the Microsoft Defender of AWS: Part 4 created b
 
 Originally Posted At: !TODO...
 
-![diagram](.../pics/MdePart4Diagram.jpg)
+![diagram](../mde_part4/MdePart4Diagram.jpg)
 
 ## How do I use this :thinking: :thinking: ??
 
@@ -24,7 +24,7 @@ aws cloudformation create-stack \
 ```
 
 {
-    "StackId": "arn:aws:cloudformation:us-east-2:798314729593:stack/MDEonAWSPart4/ec2b6a30-8449-11ec-a3d7-021f02436f0e"
+    "StackId": "arn:aws:cloudformation:mars-west-2:123456789101:stack/MDEonAWSPart4/EXAMPLE0-8449-11ec-a3d7-EXAMPLE36f0e"
 }
 
 ## Contact Us :telephone_receiver: :telephone_receiver:
