@@ -4,9 +4,11 @@ Open source code associated with the Microsoft Defender of AWS: Part 4 created b
 
 Originally Posted At: !TODO...
 
-![diagram](../mde_part4/MdePart4Diagram.jpg)
+![diagram](../blogs/mde_part4/MdePart4Diagram.jpg)
 
 ## How do I use this :thinking: :thinking: ??
+
+Donwload the provided scripts, upload them to S3, then create a CloudFormation stack.
 
 ```bash
 wget https://raw.githubusercontent.com/lightspin-tech/lightspin-office-of-the-ciso/main/blogs/mde_part4/MDE_Reporter_CloudFormation.yml
@@ -23,9 +25,13 @@ aws cloudformation create-stack \
     --capabilities CAPABILITY_NAMED_IAM
 ```
 
+You should receive an output similar to this, so you can find your CloudFormation stack easier within the Console or query the status using the CLI.
+
+```json
 {
     "StackId": "arn:aws:cloudformation:mars-west-2:123456789101:stack/MDEonAWSPart4/EXAMPLE0-8449-11ec-a3d7-EXAMPLE36f0e"
 }
+```
 
 ## Contact Us :telephone_receiver: :telephone_receiver:
 

@@ -17,6 +17,7 @@
 #KIND, either express or implied.  See the License for the
 #specific language governing permissions and limitations
 #under the License.
+
 import boto3
 import os
 import requests
@@ -121,6 +122,26 @@ def get_machines():
     # As we loop through Machine data from MDE, we want to pull out only AWS EC2 Instances which should be tagged with the Instance ID
     # provided you set up properly...
     for v in r.json()['value']:
+        # We have to do a hack to reformat the timestamps for QuickSight to take
+        firstSeenOriginal = str(v['firstSeen'])
+        lastSeenOriginal = str(v['lastSeen'])
+
+        firstSeenSplitter = firstSeenOriginal.split('T')
+        firstSeenSecondsSplitter = firstSeenSplitter[1].split('.')
+
+        lastSeenSplitter = lastSeenOriginal.split('T')
+        lastSeenSecondsSplitter = lastSeenSplitter[1].split('.')
+        # QUICKSIGHT FORMAT: yyyy-mm-dd HH:mm:ss
+        newFirstSeen = f'{firstSeenSplitter[0]} {firstSeenSecondsSplitter[0]}'
+        newLastSeen = f'{lastSeenSplitter[0]} {lastSeenSecondsSplitter[0]}'
+
+        # reinsert the dates
+        v.update(
+            {
+                'firstSeen': newFirstSeen,
+                'lastSeen': newLastSeen
+            }
+        )
         # drop the IP address details
         del v['ipAddresses']
         # Skip "Inactive" Machines
