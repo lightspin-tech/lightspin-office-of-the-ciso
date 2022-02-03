@@ -8,6 +8,48 @@ Originally Posted At: !TODO...
 
 ## How do I use this :thinking: :thinking: ??
 
+Ensure you have an Azure AD Application, named **`MDE-AWSAutomation-App`** created that has the following permissions
+
+> - AdvancedQuery.Read.All
+> - Alert.Read.All
+> - Alert.ReadWrite.All
+> - File.Read.All
+> - Ip.Read.All
+> - Machine.Read.All
+> - Machine.ReadWrite.All
+> - Machine.Scan
+> - Score.Read.All
+> - SecurityConfiguration.Read.All
+> - SecurityConfiguration.ReadWrite.All
+> - SecurityRecommendation.Read.All
+> - Software.Read.All
+> - Ti.Read.All
+> - Ti.ReadWrite
+> - Ti.ReadWrite.All
+> - Url.Read.All
+> - User.Read.All
+> - Vulnerability.Read.All
+
+Save your AAD Tenant ID, and the Azure AD Application Client and Client Secret ID into the following AWS SSM Parameters. **The values are hardcoded into the CloudFormation template**.
+
+```bash
+aws ssm put-parameter \
+    --name MDE-AWSAutomation-App-ClientID \
+    --description 'Application (client) ID for the MDE-AWSAutomation-App Azure Application' \
+    --type SecureString \
+    --value $PLACEHOLDER
+aws ssm put-parameter \
+    --name MDE-AWSAutomation-App-DirectoryID \
+    --description 'Directory (tenant) ID for the MDE-AWSAutomation-App Azure Application' \
+    --type SecureString \
+    --value $PLACEHOLDER
+aws ssm put-parameter \
+    --name MDE-AWSAutomation-App-SecretID \
+    --description 'Secret ID for the MDE-AWSAutomation-App Azure Application' \
+    --type SecureString \
+    --value $PLACEHOLDER
+```
+
 Donwload the provided scripts, upload them to S3, then create a CloudFormation stack.
 
 ```bash
@@ -32,6 +74,8 @@ You should receive an output similar to this, so you can find your CloudFormatio
     "StackId": "arn:aws:cloudformation:mars-west-2:123456789101:stack/MDEonAWSPart4/EXAMPLE0-8449-11ec-a3d7-EXAMPLE36f0e"
 }
 ```
+
+Run your CodeBuild Project manually or wait 24 hours for the Automation to kick in.
 
 ## Contact Us :telephone_receiver: :telephone_receiver:
 
