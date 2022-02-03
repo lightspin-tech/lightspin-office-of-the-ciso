@@ -4,7 +4,7 @@ Open source code associated with the Microsoft Defender of AWS: Part 4 created b
 
 Originally Posted At: !TODO...
 
-![diagram](../lightspin-office-of-the-ciso/pics/MdePart4Diagram.jpg)
+![diagram](https://github.com/lightspin-tech/lightspin-office-of-the-ciso/blob/main//pics/MdePart4Diagram.jpg)
 
 ## How do I use this :thinking: :thinking: ??
 
