@@ -4,7 +4,7 @@ Open source code associated with the Microsoft Defender of AWS: Part 4 created b
 
 Originally Posted At: !TODO...
 
-![diagram](../blogs/mde_part4/MdePart4Diagram.jpg)
+![diagram](../pics/MdePart4Diagram.jpg)
 
 ## How do I use this :thinking: :thinking: ??
 
